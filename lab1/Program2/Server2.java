@@ -108,6 +108,7 @@ class ClientHandler extends Thread
                         dos.writeUTF(received);
                         break;
                 }
+                dos.flush();
                 // dos.writeUTF(serverTalk);
                 // dos.writeUTF(received); 
                         
