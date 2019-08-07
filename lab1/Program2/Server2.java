@@ -40,65 +40,65 @@ public class Server2
 	// ClientHandler class 
 class ClientHandler extends Thread  
 { 
-    final DataInputStream dis; 
-    final DataOutputStream dos; 
-    final Socket s; 
-    DateFormat fordate = new SimpleDateFormat("yyyy/MM/dd"); 
-    DateFormat fortime = new SimpleDateFormat("hh:mm:ss"); 
+    final DataInputStream dis;
+    final DataOutputStream dos;
+    final Socket s;
+    DateFormat fordate = new SimpleDateFormat("yyyy/MM/dd");
+    DateFormat fortime = new SimpleDateFormat("hh:mm:ss");
   
     // Constructor 
-    public ClientHandler(Socket s, DataInputStream dis, DataOutputStream dos)  
+    public ClientHandler(Socket s, DataInputStream dis, DataOutputStream dos) 
     { 
-        this.s = s; 
-        this.dis = dis; 
-        this.dos = dos; 
-    } 
+        this.s = s;
+        this.dis = dis;
+        this.dos = dos;
+    }
   
     @Override
-    public void run()  
+    public void run()
     { 
-        String received; 
-        String toreturn; 
-        while (true)  
+        String received;
+        String toreturn;
+        while (true)
         { 
-            try { 
+            try {
   
                 // Ask user what he wants 
-                dos.writeUTF("Type Exit to terminate connection."); 
+                dos.writeUTF("Type Exit to terminate connection.");
                   
-                // receive the answer from client 
-                received = dis.readUTF(); 
+                // receive the answer from client
+                received = dis.readUTF();
                   
-                if(received.equals("Exit")) 
+                if(received.equals("Exit"))
                 {  
-                    System.out.println("Client " + this.s + " sends exit..."); 
-                    System.out.println("Closing this connection."); 
-                    this.s.close(); 
-                    System.out.println("Connection closed."); 
-                    break; 
-                } 
-                  
+                    System.out.println("Client " + this.s + " sends exit...");
+                    System.out.println("Closing this connection.");
+                    this.s.close();
+                    System.out.println("Connection closed.");
+                    break;
+                }
+                
                 // creating Date object 
-                Date date = new Date(); 
+                Date date = new Date();
                   
                 // write on output stream based on the 
                 // answer from the client 
-                switch (received) { 
+                switch (received) {
                   
-                    case "Date" : 
-                        toreturn = fordate.format(date); 
-                        dos.writeUTF(toreturn); 
-                        break; 
+                    case "Date" :
+                        toreturn = fordate.format(date);
+                        dos.writeUTF(toreturn);
+                        break;
                           
-                    case "Time" : 
-                        toreturn = fortime.format(date); 
-                        dos.writeUTF(toreturn); 
-                        break; 
+                    case "Time" :
+                        toreturn = fortime.format(date);
+                        dos.writeUTF(toreturn);
+                        break;
                           
-                    default: 
-                        dos.writeUTF("Invalid input"); 
-                        break; 
-                } 
+                    default:
+                        dos.writeUTF("received");
+                        break;
+                }
                 // dos.writeUTF(received); 
                         
                           
