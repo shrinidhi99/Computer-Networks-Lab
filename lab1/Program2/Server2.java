@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.text.*;
 public class Server2
 {
 	// initializing socket and inputstream
@@ -42,7 +43,8 @@ class ClientHandler extends Thread
     final DataInputStream dis; 
     final DataOutputStream dos; 
     final Socket s; 
-      
+    DateFormat fordate = new SimpleDateFormat("yyyy/MM/dd"); 
+    DateFormat fortime = new SimpleDateFormat("hh:mm:ss"); 
   
     // Constructor 
     public ClientHandler(Socket s, DataInputStream dis, DataOutputStream dos)  
@@ -77,12 +79,27 @@ class ClientHandler extends Thread
                 } 
                   
                 // creating Date object 
-                // Date date = new Date(); 
+                Date date = new Date(); 
                   
                 // write on output stream based on the 
                 // answer from the client 
-                 
-                dos.writeUTF(received); 
+                switch (received) { 
+                  
+                    case "Date" : 
+                        toreturn = fordate.format(date); 
+                        dos.writeUTF(toreturn); 
+                        break; 
+                          
+                    case "Time" : 
+                        toreturn = fortime.format(date); 
+                        dos.writeUTF(toreturn); 
+                        break; 
+                          
+                    default: 
+                        dos.writeUTF("Invalid input"); 
+                        break; 
+                } 
+                // dos.writeUTF(received); 
                         
                           
                     
