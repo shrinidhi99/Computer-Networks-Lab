@@ -91,7 +91,7 @@ main (int argc, char *argv[])
 {
   NS_LOG_INFO ("Ping Emulation Example");
 
-  std::string deviceName ("wlp6s0"); // wifi device
+  std::string deviceName ("eno1"); // wifi device
   std::string remote ("127.0.0.1"); // example.com
 
   //
@@ -105,7 +105,7 @@ main (int argc, char *argv[])
 
   Ipv4Address remoteIp (remote.c_str ());
   Ipv4Address localIp ("10.100.15.34"); // local ip of wifi device
-  NS_ABORT_MSG_IF (localIp == "10.100.15.34", "You must change the local IP address before running this example");
+  NS_ABORT_MSG_IF (localIp == "1.2.3.4", "You must change the local IP address before running this example");
 
   Ipv4Mask localMask ("255.255.252.0");
 

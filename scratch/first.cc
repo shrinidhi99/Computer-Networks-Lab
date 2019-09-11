@@ -13,13 +13,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-// modified first.cc to support IPv6 addressing
+
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
-#include <string>
+#include "ns3/netanim-module.h"
+// ends here
 
 using namespace ns3;
 
@@ -28,13 +29,10 @@ NS_LOG_COMPONENT_DEFINE ("FirstScriptExample");
 int
 main (int argc, char *argv[])
 {
-
-  std::string ip = "v4"; // by default v4
-
+  // bool tracing = false;
   CommandLine cmd;
-  cmd.AddValue ("ip", "IP version", ip);
   cmd.Parse (argc, argv);
-
+  
   Time::SetResolution (Time::NS);
   LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
@@ -49,29 +47,13 @@ main (int argc, char *argv[])
   NetDeviceContainer devices;
   devices = pointToPoint.Install (nodes);
 
-  // logic has been coded here
-  Ipv6InterfaceContainer interfacesV6;
-  Ipv4InterfaceContainer interfacesV4;
+  InternetStackHelper stack;
+  stack.Install (nodes);
 
-  if(ip == "v6") {
-    InternetStackHelper stack;
-    stack.SetIpv4StackInstall (false);
-    stack.Install (nodes);
+  Ipv4AddressHelper address;
+  address.SetBase ("10.1.1.0", "255.255.255.0");
 
-    Ipv6AddressHelper address;
-    address.SetBase (Ipv6Address ("2001:db8::"), Ipv6Prefix (64));
-    Ipv6InterfaceContainer interfacesV6 = address.Assign (devices);
-  }
-  else if(ip == "v4") {
-    InternetStackHelper stack;
-    stack.SetIpv6StackInstall (false);
-    stack.Install (nodes);
-
-    Ipv4AddressHelper address;
-    address.SetBase ("10.1.1.0", "255.255.255.0");
-
-    Ipv4InterfaceContainer interfacesV4 = address.Assign (devices);
-  }
+  Ipv4InterfaceContainer interfaces = address.Assign (devices);
 
   UdpEchoServerHelper echoServer (9);
 
@@ -79,8 +61,7 @@ main (int argc, char *argv[])
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
 
-  // IPv6 part
-  UdpEchoClientHelper echoClient (((ip == "v6")? interfacesV6.GetAddress (1, 1): interfacesV4.GetAddress (1)), 9);
+  UdpEchoClientHelper echoClient (interfaces.GetAddress (1), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
@@ -89,7 +70,16 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
 
+  // if (tracing)
+    
+      AsciiTraceHelper ascii;
+      pointToPoint.EnableAsciiAll (ascii.CreateFileStream ("first.tr"));
+      // pointToPoint.EnablePcapAll ("first", false);
+    
+
+// ends here
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;
 }
+
