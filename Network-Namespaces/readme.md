@@ -109,7 +109,7 @@ ___
 
     * _**sudo ip addr list**_ in the global namespace will not show any 10.1.1.0/24-related interfaces or addresses.
 
-    *_**sudo ip netns exec blue ip addr list**_ will show only the 10.1.1.0/24-related interfaces and addresses, and will not show any interfaces or addresses from the global namespace.
+    * _**sudo ip netns exec blue ip addr list**_ will show only the 10.1.1.0/24-related interfaces and addresses, and will not show any interfaces or addresses from the global namespace.
 
     * Similarly, _**sudo ip route list**_ in each namespace will show different routing table entries, including different default gateways.
 
