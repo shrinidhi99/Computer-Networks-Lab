@@ -117,3 +117,166 @@ ___
 
 > _sudo ip link set dev veth0 netns blue_
 * Here **veth0** is the device and **blue** is the network namespace.
+
+
+---
+
+### Star topology with three namespaces with a linux bridge at the centre
+
+> Create three namespaces
+```shell
+sudo ip netns add red
+sudo ip netns add blue
+sudo ip netns add green
+```
+> Create veth pairs
+```shell
+sudo ip link add eth0 type veth peer name eth1
+sudo ip link add eth2 type veth peer name eth3
+sudo ip link add eth4 type veth peer name eth5
+```
+> Set the veth interfaces inside the namespaces
+```shell
+sudo ip link set eth0 netns red
+sudo ip link set eth2 netns green
+sudo ip link set eth4 netns blue
+```
+> Bring loopback interfaces up
+```shell
+sudo ip netns exec red ip link set lo up
+sudo ip netns exec green ip link set lo up
+sudo ip netns exec blue ip link set lo up
+```
+> Bring up the interfaces within namespaces
+```shell
+sudo ip netns exec red ip link set eth0 up
+sudo ip netns exec green ip link set eth2 up
+sudo ip netns exec blue ip link set eth4 up
+```
+> Assign interfaces within namespaces IP addresses
+```shell
+sudo ip netns exec red ip address add 10.0.0.1/24 dev eth0
+sudo ip netns exec green ip address add 10.0.0.3/24 dev eth2
+sudo ip netns exec blue ip address add 10.0.0.5/24 dev eth4
+```
+> Create bridge using iproute package. Brctl is deprecated
+```shell
+sudo ip link add name br0 type bridge
+sudo ip link set dev br0 up
+```
+> Set the other lose interfaces into the bridge
+```shell
+sudo ip link set eth1 master br0
+sudo ip link set eth3 master br0
+sudo ip link set eth5 master br0
+```
+> Bring bridge interfaces up
+```shell
+sudo ip link set dev eth1 up
+sudo ip link set dev eth3 up
+sudo ip link set dev eth5 up
+```
+> Now ping, it works
+```shell
+sudo ip netns exec red ping 10.0.0.3
+sudo ip netns exec red ping 10.0.0.5
+sudo ip netns exec green ping 10.0.0.5
+```
+> Add network loop into br0 and set the interfaces up
+```shell
+sudo ip link add eth11 type veth peer name eth22
+sudo ip link set eth11 master br0
+sudo ip link set eth22 master br0
+sudo ip link set dev eth11 up
+sudo ip link set dev eth22 up
+```
+> Delete old arp entries
+```shell
+sudo ip netns exec red arp -d 10.0.0.5
+sudo ip netns exec red arp -d 10.0.0.3
+```
+> Ping won’t work. Reason: Network loop.
+```shell
+sudo ip netns exec green ping 10.0.0.5
+sudo ip netns exec red ping 10.0.0.3
+```
+
+---
+
+### Star topology with three namespaces with one namespace (router) at the centre
+
+> Create three namespaces
+```shell
+sudo ip netns add red
+sudo ip netns add green
+sudo ip netns add blue
+```
+> Create three veth pairs
+```shell
+sudo ip link add eth0 type veth peer name eth1
+sudo ip link add eth2 type veth peer name eth3
+sudo ip link add eth4 type veth peer name eth5
+```
+> Set them into the namespaces
+```shell
+sudo ip link set eth0 netns red
+sudo ip link set eth2 netns green
+sudo ip link set eth4 netns blue
+```
+> Bring them up
+```shell
+sudo ip netns exec red ip link set eth0 up
+sudo ip netns exec green ip link set eth2 up
+sudo ip netns exec blue ip link set eth4 up
+```
+> Assign IP address to them (all different subnets)
+```shell
+sudo ip netns exec red ip address add 10.0.0.1/24 dev eth0
+sudo ip netns exec green ip address add 10.0.2.1/24 dev eth2
+sudo ip netns exec blue ip address add 10.0.4.1/24 dev eth4
+```
+> Create router namespace and add appropriate interfaces into it
+```shell
+sudo ip netns add router
+sudo ip link set eth1 netns router
+sudo ip link set eth3 netns router
+sudo ip link set eth5 netns router
+```
+> Bring the interface up
+```shell
+sudo ip netns exec router ip link set eth1 up
+sudo ip netns exec router ip link set eth3 up
+sudo ip netns exec router ip link set eth5 up
+```
+> Assign IP addresses to the interfaces within router
+```shell
+sudo ip netns exec router ip address add 10.0.0.2/24 dev eth1
+sudo ip netns exec router ip address add 10.0.2.2/24 dev eth3
+sudo ip netns exec router ip address add 10.0.4.2/24 dev eth5
+```
+> Bring loopback interfaces up
+```shell
+sudo ip netns exec router ip link set lo up
+sudo ip netns exec red ip link set lo up
+sudo ip netns exec blue ip link set lo up
+sudo ip netns exec green ip link set lo up
+```
+> Try ping, won’t work as there is no way to know where to send packets
+```
+> Add default gateway, i.e. it serves as a forwarding host to connect to other networks
+```shell
+sudo ip netns exec red ip route add default via 10.0.0.2 dev eth0
+sudo ip netns exec green ip route add default via 10.0.2.2 dev eth2
+sudo ip netns exec blue ip route add default via 10.0.4.2 dev eth4
+```
+> Enable IP forwarding : Make a system to act as a router i.e., it should determine the path a
+packet has to take to reach it’s destination
+```shell
+sudo ip netns exec router sysctl -w net.ipv4.ip_forward=1
+```
+> Try ping now, it works
+```shell
+sudo ip netns exec blue ping 10.0.4.1
+sudo ip netns exec green ping 10.0.2.1
+sudo ip netns exec red ping 10.0.0.1
+```
