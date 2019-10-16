@@ -262,7 +262,6 @@ sudo ip netns exec blue ip link set lo up
 sudo ip netns exec green ip link set lo up
 ```
 > Try ping, won’t work as there is no way to know where to send packets
-```
 > Add default gateway, i.e. it serves as a forwarding host to connect to other networks
 ```shell
 sudo ip netns exec red ip route add default via 10.0.0.2 dev eth0
