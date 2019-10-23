@@ -279,3 +279,314 @@ sudo ip netns exec blue ping 10.0.4.1
 sudo ip netns exec green ping 10.0.2.1
 sudo ip netns exec red ping 10.0.0.1
 ```
+---
+### Star topology with 4 namespaces with one namespace (router) at the centre
+
+> Create three namespaces
+```shell
+sudo ip netns add red
+sudo ip netns add green
+sudo ip netns add blue
+sudo ip netns add grey
+```
+> Create three veth pairs
+```shell
+sudo ip link add eth0 type veth peer name eth1
+sudo ip link add eth2 type veth peer name eth3
+sudo ip link add eth4 type veth peer name eth5
+sudo ip link add eth6 type veth peer name eth7
+```
+> Set them into the namespaces
+```shell
+sudo ip link set eth0 netns red
+sudo ip link set eth2 netns green
+sudo ip link set eth4 netns blue
+sudo ip link set eth6 netns grey
+```
+> Bring them up
+```shell
+sudo ip netns exec red ip link set eth0 up
+sudo ip netns exec green ip link set eth2 up
+sudo ip netns exec blue ip link set eth4 up
+sudo ip netns exec grey ip link set eth6 up
+```
+> Assign IP address to them (all different subnets)
+```shell
+sudo ip netns exec red ip address add 10.0.0.1/24 dev eth0
+sudo ip netns exec green ip address add 10.0.2.1/24 dev eth2
+sudo ip netns exec blue ip address add 10.0.4.1/24 dev eth4
+sudo ip netns exec grey ip address add 10.0.6.1/24 dev eth6
+```
+> Create router namespace and add appropriate interfaces into it
+```shell
+sudo ip netns add router
+sudo ip link set eth1 netns router
+sudo ip link set eth3 netns router
+sudo ip link set eth5 netns router
+sudo ip link set eth7 netns router
+```
+> Bring the interface up
+```shell
+sudo ip netns exec router ip link set eth1 up
+sudo ip netns exec router ip link set eth3 up
+sudo ip netns exec router ip link set eth5 up
+sudo ip netns exec router ip link set eth7 up
+```
+> Assign IP addresses to the interfaces within router
+```shell
+sudo ip netns exec router ip address add 10.0.0.2/24 dev eth1
+sudo ip netns exec router ip address add 10.0.2.2/24 dev eth3
+sudo ip netns exec router ip address add 10.0.4.2/24 dev eth5
+sudo ip netns exec router ip address add 10.0.6.2/24 dev eth7
+```
+> Bring loopback interfaces up
+```shell
+sudo ip netns exec router ip link set lo up
+sudo ip netns exec red ip link set lo up
+sudo ip netns exec blue ip link set lo up
+sudo ip netns exec green ip link set lo up
+sudo ip netns exec grey ip link set lo up
+```
+> Try ping, won’t work as there is no way to know where to send packets
+> Add default gateway, i.e. it serves as a forwarding host to connect to other networks
+```shell
+sudo ip netns exec red ip route add default via 10.0.0.2 dev eth0
+sudo ip netns exec green ip route add default via 10.0.2.2 dev eth2
+sudo ip netns exec blue ip route add default via 10.0.4.2 dev eth4
+sudo ip netns exec grey ip route add default via 10.0.6.2 dev eth6
+```
+> Enable IP forwarding : Make a system to act as a router i.e., it should determine the path a packet has to take to reach it’s destination
+```shell
+sudo ip netns exec router sysctl -w net.ipv4.ip_forward=1
+```
+> Try ping now, it works
+```shell
+sudo ip netns exec blue ping 10.0.4.1
+sudo ip netns exec green ping 10.0.2.1
+sudo ip netns exec red ping 10.0.0.1
+sudo ip netns exec grey ping 10.0.6.1
+```
+---
+
+### Create a network by connecting 3 linux bridges (each connected to a different network namespace) in a linear fashion (1--2--3)
+
+    netns1 -- br1 -- br2 -- br3 -- netns3
+                      |
+                    netns2
+
+> Create three namespaces
+```shell
+sudo ip netns add netns1
+sudo ip netns add netns2
+sudo ip netns add netns3
+```
+> Create veth pairs
+```shell
+sudo ip link add eth0 type veth peer name eth1
+sudo ip link add eth2 type veth peer name eth3
+sudo ip link add eth4 type veth peer name eth5
+
+sudo ip link add eth6 type veth peer name eth7
+sudo ip link add eth8 type veth peer name eth9
+```
+> Set the veth interfaces inside the namespaces
+```shell
+sudo ip link set eth0 netns netns1
+sudo ip link set eth2 netns netns2
+sudo ip link set eth4 netns netns3
+```
+> Bring loopback interfaces up
+```shell
+sudo ip netns exec netns1 ip link set lo up
+sudo ip netns exec netns2 ip link set lo up
+sudo ip netns exec netns3 ip link set lo up
+```
+> Bring up the interfaces within namespaces
+```shell
+sudo ip netns exec netns1 ip link set eth0 up
+sudo ip netns exec netns2 ip link set eth2 up
+sudo ip netns exec netns3 ip link set eth4 up
+```
+> Assign interfaces within namespaces IP addresses
+```shell
+sudo ip netns exec netns1 ip address add 10.0.0.1/24 dev eth0
+sudo ip netns exec netns2 ip address add 10.0.0.3/24 dev eth2
+sudo ip netns exec netns3 ip address add 10.0.0.5/24 dev eth4
+```
+> Create 3 bridges using iproute package. 
+```shell
+sudo ip link add name br1 type bridge
+sudo ip link set dev br1 up
+
+sudo ip link add name br2 type bridge
+sudo ip link set dev br2 up
+
+sudo ip link add name br3 type bridge
+sudo ip link set dev br3 up
+```
+> Set the other lose interfaces into the bridge. eth1 -> br1, eth2 -> br2, eth3 -> br3
+```shell
+sudo ip link set eth1 master br1
+sudo ip link set eth3 master br2
+sudo ip link set eth5 master br3
+
+sudo ip link set eth6 master br1
+sudo ip link set eth7 master br2
+
+sudo ip link set eth8 master br2
+sudo ip link set eth9 master br3
+```
+> Bring bridge interfaces up
+```shell
+sudo ip link set dev eth1 up
+sudo ip link set dev eth3 up
+sudo ip link set dev eth5 up
+
+sudo ip link set dev eth6 up
+sudo ip link set dev eth7 up
+sudo ip link set dev eth8 up
+sudo ip link set dev eth9 up
+```
+> Now ping, it works
+```shell
+sudo ip netns exec netns1 ping 10.0.0.3
+sudo ip netns exec netns2 ping 10.0.0.5
+sudo ip netns exec netns3 ping 10.0.0.5
+```
+> Add network loop into br0 and set the interfaces up
+```shell
+sudo ip link add eth11 type veth peer name eth12
+sudo ip link set eth11 master br1
+sudo ip link set eth12 master br1
+sudo ip link set dev eth11 up
+sudo ip link set dev eth12 up
+
+sudo ip link add eth21 type veth peer name eth22
+sudo ip link set eth21 master br2
+sudo ip link set eth22 master br2
+sudo ip link set dev eth21 up
+sudo ip link set dev eth22 up
+
+sudo ip link add eth31 type veth peer name eth32
+sudo ip link set eth31 master br3
+sudo ip link set eth32 master br3
+sudo ip link set dev eth31 up
+sudo ip link set dev eth32 up
+```
+
+---
+
+### Create a network by connecting 3 linux bridges (each connected to a different network namespace) in a circular fashion (1--2--3--1)
+                  ns2
+                   |
+    ns1 -- br1 -- br2 -- br3 -- ns3
+            |             |
+            +-------------+
+
+> Create three namespaces
+```shell
+sudo ip netns add netns1
+sudo ip netns add netns2
+sudo ip netns add netns3
+```
+> Create veth pairs
+```shell
+sudo ip link add eth0 type veth peer name eth1
+sudo ip link add eth2 type veth peer name eth3
+sudo ip link add eth4 type veth peer name eth5
+
+sudo ip link add eth6 type veth peer name eth7
+sudo ip link add eth8 type veth peer name eth9
+sudo ip link add eth10 type veth peer name eth11
+```
+> Set the veth interfaces inside the namespaces
+```shell
+sudo ip link set eth0 netns netns1
+sudo ip link set eth2 netns netns2
+sudo ip link set eth4 netns netns3
+```
+> Bring loopback interfaces up
+```shell
+sudo ip netns exec netns1 ip link set lo up
+sudo ip netns exec netns2 ip link set lo up
+sudo ip netns exec netns3 ip link set lo up
+```
+> Bring up the interfaces within namespaces
+```shell
+sudo ip netns exec netns1 ip link set eth0 up
+sudo ip netns exec netns2 ip link set eth2 up
+sudo ip netns exec netns3 ip link set eth4 up
+```
+> Assign interfaces within namespaces IP addresses
+```shell
+sudo ip netns exec netns1 ip address add 10.0.0.1/24 dev eth0
+sudo ip netns exec netns2 ip address add 10.0.0.3/24 dev eth2
+sudo ip netns exec netns3 ip address add 10.0.0.5/24 dev eth4
+```
+> Create 3 bridges using iproute package. 
+```shell
+sudo ip link add name br1 type bridge
+sudo ip link set dev br1 up
+
+sudo ip link add name br2 type bridge
+sudo ip link set dev br2 up
+
+sudo ip link add name br3 type bridge
+sudo ip link set dev br3 up
+```
+> Set the other lose interfaces into the bridge. eth1 -> br1, eth2 -> br2, eth3 -> br3
+```shell
+sudo ip link set eth1 master br1
+sudo ip link set eth3 master br2
+sudo ip link set eth5 master br3
+
+sudo ip link set eth6 master br1
+sudo ip link set eth7 master br2
+
+sudo ip link set eth8 master br2
+sudo ip link set eth9 master br3
+
+sudo ip link set eth10 master br3
+sudo ip link set eth11 master br1
+```
+> Bring bridge interfaces up
+```shell
+sudo ip link set dev eth1 up
+sudo ip link set dev eth3 up
+sudo ip link set dev eth5 up
+
+sudo ip link set dev eth6 up
+sudo ip link set dev eth7 up
+sudo ip link set dev eth8 up
+sudo ip link set dev eth9 up
+sudo ip link set dev eth10 up
+sudo ip link set dev eth11 up
+```
+> Now ping, it works
+```shell
+sudo ip netns exec netns1 ping 10.0.0.3
+sudo ip netns exec netns2 ping 10.0.0.5
+sudo ip netns exec netns3 ping 10.0.0.5
+```
+> Add network loop into br0 and set the interfaces up
+```shell
+sudo ip link add eth11 type veth peer name eth12
+sudo ip link set eth11 master br1
+sudo ip link set eth12 master br1
+sudo ip link set dev eth11 up
+sudo ip link set dev eth12 up
+
+sudo ip link add eth21 type veth peer name eth22
+sudo ip link set eth21 master br2
+sudo ip link set eth22 master br2
+sudo ip link set dev eth21 up
+sudo ip link set dev eth22 up
+
+sudo ip link add eth31 type veth peer name eth32
+sudo ip link set eth31 master br3
+sudo ip link set eth32 master br3
+sudo ip link set dev eth31 up
+sudo ip link set dev eth32 up
+```
+
+---
