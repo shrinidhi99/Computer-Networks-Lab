@@ -1,3 +1,4 @@
+```shell
 sudo ip netns add red
 sudo ip netns add blue
 sudo ip link add tap0 type veth peer name tap1
@@ -16,3 +17,4 @@ iperf -c 10.0.0.2
 
 tc qdisc replace dev tap0 root netem delay 10ms
 iperf -c 10.0.0.2
+```
