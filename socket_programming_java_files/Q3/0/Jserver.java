@@ -1,66 +1,58 @@
+
 // A Java program for a Server 
-import java.net.*; 
-import java.io.*; 
+import java.net.*;
+import java.io.*;
 
-public class Jserver 
-{ 
-	//initialize socket and input stream 
-	private Socket		 socket = null; 
-	private ServerSocket server = null; 
-	private DataInputStream in	 = null; 
-	private DataOutputStream out	 = null;
-	// constructor with port 
-	public Jserver(int port) 
-	{ 
-		// starts server and waits for a connection 
-		try
-		{ 
-			server = new ServerSocket(port); 
-			System.out.println("Server started"); 
-			DataInputStream input = new DataInputStream(System.in); ; 
-			System.out.println("Waiting for a client ..."); 
+public class Jserver {
+	// initialize socket and input stream
+	private Socket socket = null;
+	private ServerSocket server = null;
+	private DataInputStream in = null;
+	private DataOutputStream out = null;
 
-			socket = server.accept(); 
-			System.out.println("Client accepted"); 
+	// constructor with port
+	public Jserver(int port) {
+		// starts server and waits for a connection
+		try {
+			server = new ServerSocket(port);
+			System.out.println("Server started");
+			DataInputStream input = new DataInputStream(System.in);
+			;
+			System.out.println("Waiting for a client ...");
 
-			// takes input from the client socket 
-			in = new DataInputStream(new BufferedInputStream(socket.getInputStream())); 
-			out = new DataOutputStream(socket.getOutputStream()); 
+			socket = server.accept();
+			System.out.println("Client accepted");
 
-			String line = ""; 
+			// takes input from the client socket
+			in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
+			out = new DataOutputStream(socket.getOutputStream());
 
-			// reads message from client until "Over" is sent 
-			while (!line.equals("Over")) 
-			{ 
-				try
-				{ 
-					line = in.readUTF(); 
-					System.out.println(line); 
-					line = input.readLine(); 
+			String line = "";
+
+			// reads message from client until "Over" is sent
+			while (!line.equals("Over")) {
+				try {
+					line = in.readUTF();
+					System.out.println(line);
+					line = input.readLine();
 					out.writeUTF(line);
 
-				} 
-				catch(IOException i) 
-				{ 
-					System.out.println(i); 
-				} 
-			} 
-			System.out.println("Closing connection"); 
+				} catch (IOException i) {
+					System.out.println(i);
+				}
+			}
+			System.out.println("Closing connection");
 
-			// close connection 
-			socket.close(); 
-			in.close(); 
-		} 
-		catch(IOException i) 
-		{ 
-			System.out.println(i); 
+			// close connection
+			socket.close();
+			in.close();
+		} catch (IOException i) {
+			System.out.println(i);
 		}
-	} 
+	}
 
-	public static void main(String args[]) 
-	{ 
+	public static void main(String args[]) {
 		System.out.println("Start: ");
-		Jserver server = new Jserver(8884); 
-	} 
-} 
-
+		Jserver server = new Jserver(8884);
+	}
+}
