@@ -268,8 +268,7 @@ sudo ip netns exec red ip route add default via 10.0.0.2 dev eth0
 sudo ip netns exec green ip route add default via 10.0.2.2 dev eth2
 sudo ip netns exec blue ip route add default via 10.0.4.2 dev eth4
 ```
-> Enable IP forwarding : Make a system to act as a router i.e., it should determine the path a
-packet has to take to reach it’s destination
+> Enable IP forwarding : Make a system to act as a router i.e., it should determine the path a packet has to take to reach it’s destination
 ```shell
 sudo ip netns exec router sysctl -w net.ipv4.ip_forward=1
 ```
