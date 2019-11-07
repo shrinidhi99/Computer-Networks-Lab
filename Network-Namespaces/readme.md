@@ -121,7 +121,7 @@ ___
 
 ---
 
-### Star topology with three namespaces with a linux bridge at the centre
+## Star topology with three namespaces with a linux bridge at the centre
 
 > Create three namespaces
 ```shell
@@ -203,7 +203,7 @@ sudo ip netns exec red ping 10.0.0.3
 
 ---
 
-### Star topology with three namespaces with one namespace (router) at the centre
+## Star topology with three namespaces with one namespace (router) at the centre
 
 > Create three namespaces
 ```shell
@@ -280,7 +280,7 @@ sudo ip netns exec green ping 10.0.2.1
 sudo ip netns exec red ping 10.0.0.1
 ```
 ---
-### Star topology with 4 namespaces with one namespace (router) at the centre
+## Star topology with 4 namespaces with one namespace (router) at the centre
 
 > Create three namespaces
 ```shell
