@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-// modified first.cc to support IPv6 addressing
+
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -49,7 +49,6 @@ main (int argc, char *argv[])
   NetDeviceContainer devices;
   devices = pointToPoint.Install (nodes);
 
-  // logic has been coded here
   Ipv6InterfaceContainer interfacesV6;
   Ipv4InterfaceContainer interfacesV4;
 
@@ -79,7 +78,6 @@ main (int argc, char *argv[])
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
 
-  // IPv6 part
   UdpEchoClientHelper echoClient (((ip == "v6")? interfacesV6.GetAddress (1, 1): interfacesV4.GetAddress (1)), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
